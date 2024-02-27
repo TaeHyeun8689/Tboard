@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.springproj.tboard.repository.UserDAO">
+	
+	<!-- 회원가입 -->
+	<insert id="signUp" parameterType="java.util.HashMap">
+		INSERT INTO USERS(user_id, user_ps,user_name,user_sex,user_birthday,user_email,user_e_active_key,user_phone)
+		VALUES (#{id}, #{password}, #{name}, #{sex}, #{birthday}, #{email}, #{active_key}, #{phone})
+	</insert>
+	
+
+
+	<!-- 아이디 중복체크 기능 -->
+	<select id="inDupCheck" parameterType="java.lang.String" resultType="java.lang.Integer">
+		SELECT COUNT(user_id)
+		FROM USERS
+		WHERE user_id = #{id}
+	</select>
+	
+	
+	<!-- 이메일 인증 -->
+	<update id="activateEmail">
+		UPDATE USERS
+		SET user_active_state = 1,
+		user_e_active_key = '0'
+		WHERE user_email = #{user_email}
+		AND user_e_active_key = #{user_e_active_key}
+	</update>
+	
+	<select id="login" parameterType="java.util.HashMap" resultType="com.springproj.tboard.domain.UserVO">
+		SELECT *
+		FROM users
+		WHERE user_id = #{user_id}
+		AND user_ps = #{user_ps}
+	</select>
+	
+	<update id="loginLatestTimeUpdate">
+		UPDATE users
+		SET user_latest_login = CURRENT_TIMESTAMP
+		WHERE user_id = #{user_id}
+		AND user_ps = #{user_ps}
+	</update>
+	
+	<update id="updateRecommendActiveTime">
+		UPDATE users
+		SET user_recommend_active = SYSTIMESTAMP + INTERVAL '1' MINUTE
+		WHERE user_id = #{user_id}
+	</update>
+	
+	<select id="checkRecommendActiveTime" resultType="java.sql.Timestamp">
+		SELECT user_recommend_active
+		FROM users
+		WHERE user_id = #{user_id}
+	</select>
+</mapper>
+
+
+
+
+
+
+

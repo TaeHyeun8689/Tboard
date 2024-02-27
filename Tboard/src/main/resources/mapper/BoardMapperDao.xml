@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.springproj.tboard.repository.BoardDAO">
+
+	<select id="listPageCriteria"
+		resultType="com.springproj.tboard.domain.BoardVO">
+		SELECT * FROM (
+		SELECT
+		board.*,
+		ROW_NUMBER() OVER (ORDER BY
+		board_num DESC) AS rn
+		FROM
+		board
+		WHERE
+		board_num > 0
+		) WHERE rn BETWEEN
+		#{pageStart} AND #{pageStart} + #{perPageNum} - 1
+	</select>
+
+	<select id="totalCount" resultType="Integer">
+		SELECT COUNT(*)
+		FROM
+		board
+	</select>
+	<select id="boardRead"
+		resultType="com.springproj.tboard.domain.BoardVO">
+		SELECT *
+		FROM board
+		WHERE board_num = #{board_num}
+	</select>
+
+	<insert id="boardWrite">
+		INSERT into board
+		(board_num, board_title,
+		board_content, board_writer, board_reg_date, board_hit,
+		board_recommend)
+		VALUES((SELECT NVL(MAX(board_num), 0) +1 FROM board),
+		#{title}, #{content}, #{id}, SYSTIMESTAMP, 0, 0)
+	</insert>
+
+	<update id="boardUpdate">
+		UPDATE board
+		SET board_title = #{title},
+		board_content
+		= #{content},
+		board_reg_date = SYSTIMESTAMP
+		WHERE board_num = #{number}
+		AND board_writer = #{writer}
+	</update>
+	<delete id="boardDelete">
+		DELETE FROM board
+		WHERE board_num = #{number}
+		AND
+		board_writer = #{writer}
+	</delete>
+
+	<update id="countHit">
+		UPDATE board
+		SET board_hit = board_hit+1
+		WHERE
+		board_num = #{board_num}
+	</update>
+	<update id="countReply">
+	<![CDATA[
+		UPDATE board
+		SET board_reply_count = (select	count(*) from reply where board_num = #{board_num})
+		WHERE board_num = #{board_num}
+	]]>
+	</update>
+
+
+	<select id="searchBoard" parameterType="java.util.HashMap"
+        resultType="com.springproj.tboard.domain.BoardVO">
+    SELECT *
+    FROM (
+        SELECT board.*, ROWNUM AS rn
+        FROM board
+        WHERE
+        <choose>
+            <when test="search_condition == 'title'">
+                board_title LIKE '%' || #{search_content} || '%'
+            </when>
+            <when test="search_condition == 'content'">
+                board_content LIKE '%' || #{search_content} || '%'
+            </when>
+            <when test="search_condition == 'writer'">
+                board_writer LIKE '%' || #{search_content} || '%'
+            </when>
+            <otherwise>
+                1=1
+        </otherwise>
+        </choose>
+    )
+    WHERE rn BETWEEN #{pageStart} AND #{pageStart} + #{perPageNum} - 1
+    ORDER BY board_num DESC
+    
+</select>
+<select id="searchTotalCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM board
+        <where>
+            <if test='search_condition == "title"'>
+                AND board_title LIKE '%' || #{search_content} || '%'
+            </if>
+            <if test='search_condition == "content"'>
+                AND board_content LIKE '%' || #{search_content} || '%'
+            </if>
+            <if test='search_condition == "writer"'>
+                AND board_writer LIKE '%' || #{search_content} || '%'
+            </if>
+        </where>
+</select>
+
+	<update id="countRecommned">
+    <![CDATA[
+    UPDATE board
+    SET board_recommend = board_recommend + 1
+    WHERE board_num = #{board_num}
+    AND SYSDATE > (
+        SELECT user_recommend_active
+        FROM users
+        WHERE user_id = #{user_id}
+    )
+    ]]>
+	</update>
+</mapper>

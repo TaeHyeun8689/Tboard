@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.springproj.tboard.repository.ReplyDAO">
+
+	<select id = "replyListPageCriteria" resultType="com.springproj.tboard.domain.ReplyVO">
+		SELECT * FROM (
+        SELECT
+            reply.*,
+            ROW_NUMBER() OVER (ORDER BY reply_num DESC) AS rn
+        FROM
+            reply
+        WHERE
+            board_num = #{board_num}
+    ) WHERE rn BETWEEN #{replyPageStart} AND #{replyPageStart} + #{replyPerPageNum} - 1
+	</select>
+	
+	<select id="replyTotalCount" resultType="java.lang.Integer">
+		SELECT COUNT(*)
+		FROM reply
+		WHERE board_num = #{board_num}
+	</select>
+	
+	<insert id="replyWrite">
+		INSERT INTO reply
+		(reply_num, board_num, reply_id, reply_content, reply_reg_date)
+		VALUES ((SELECT NVL(MAX(reply_num), 0) +1 FROM reply), #{board_num}, #{reply_id}, #{reply_content}, SYSTIMESTAMP)
+	</insert>
+	
+	<update id="replyUpdate">
+		UPDATE reply
+		SET reply_content = #{reply_content}
+		WHERE reply_num = #{reply_num}
+	</update>
+	
+	<delete id="replyDelete">
+		DELETE FROM reply
+		WHERE reply_num = #{reply_num}
+	</delete>
+	<delete id="boardfirstDelete">
+		DELETE FROM reply
+		WHERE board_num = #{number}
+	</delete>
+	
+</mapper>
+	
+	
+	
